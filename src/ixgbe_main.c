@@ -2893,7 +2893,7 @@ static void ixgbe_update_itr(struct ixgbe_q_vector *q_vector,
 	 * is only slightly too low. As such we should increase it by a small
 	 * fixed amount.
 	 */
-	if (packets < 48) {
+	if (packets < 32) {
 		itr = (q_vector->itr >> 2) + IXGBE_ITR_ADAPTIVE_MIN_INC;
 		if (itr > IXGBE_ITR_ADAPTIVE_MAX_USECS)
 			itr = IXGBE_ITR_ADAPTIVE_MAX_USECS;
@@ -2914,19 +2914,19 @@ static void ixgbe_update_itr(struct ixgbe_q_vector *q_vector,
 		goto clear_counts;
 	}
 
-	/* Between 48 and 96 is our "goldilocks" zone where we are working
+	/* Between 32 and 64 is our "goldilocks" zone where we are working
 	 * out "just right". Just report that our current ITR is good for us.
 	 */
-	if (packets < 96) {
+	if (packets < 64) {
 		itr = q_vector->itr >> 2;
 		goto clear_counts;
 	}
 
-	/* If packet count is 96 or greater we are likely looking at a slight
+	/* If packet count is 64 or greater we are likely looking at a slight
 	 * overrun of the delay we want. Try halving our delay to see if that
 	 * will cut the number of packets in half per interrupt.
 	 */
-	if (packets < 256) {
+	if (packets < 128) {
 		itr = q_vector->itr >> 3;
 		if (itr < IXGBE_ITR_ADAPTIVE_MIN_USECS)
 			itr = IXGBE_ITR_ADAPTIVE_MIN_USECS;
@@ -2934,14 +2934,14 @@ static void ixgbe_update_itr(struct ixgbe_q_vector *q_vector,
 	}
 
 	/* The paths below assume we are dealing with a bulk ITR since number
-	 * of packets is 256 or greater. We are just going to have to compute
+	 * of packets is 128 or greater. We are just going to have to compute
 	 * a value and try to bring the count under control, though for smaller
 	 * packet sizes there isn't much we can do as NAPI polling will likely
 	 * be kicking in sooner rather than later.
 	 */
 	itr = IXGBE_ITR_ADAPTIVE_BULK;
 
-	/* If packet counts are 256 or greater we can assume we have a gross
+	/* If packet counts are 128 or greater we can assume we have a gross
 	 * overestimation of what the rate should be. Instead of trying to fine
 	 * tune it just use the formula below to try and dial in an exact value
 	 * give the current packet size of the frame.
@@ -2963,13 +2963,9 @@ static void ixgbe_update_itr(struct ixgbe_q_vector *q_vector,
 	 * by 8 after rounding up. We also have to account for PCIe link speed
 	 * difference as ITR scales based on this.
 	 */
-	if (avg_wire_size <= 60) {
-		/* Start at 50k ints/sec */
-		avg_wire_size = 5120;
-	} else if (avg_wire_size <= 316) {
-		/* 50K ints/sec to 16K ints/sec */
-		avg_wire_size *= 40;
-		avg_wire_size += 2720;
+	if (avg_wire_size <= 316) {
+		/* 16K ints/sec */
+		avg_wire_size = 15360;
 	} else if (avg_wire_size <= 1084) {
 		/* 16K ints/sec to 9.2K ints/sec */
 		avg_wire_size *= 15;

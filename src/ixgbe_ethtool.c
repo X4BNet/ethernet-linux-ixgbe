@@ -3212,7 +3212,7 @@ static int ixgbe_set_coalesce(struct net_device *netdev,
 		adapter->rx_itr_setting = ec->rx_coalesce_usecs;
 
 	if (adapter->rx_itr_setting == 1)
-		rx_itr_param = IXGBE_20K_ITR;
+		rx_itr_param = IXGBE_16K_ITR;
 	else
 		rx_itr_param = adapter->rx_itr_setting;
 
